@@ -1,0 +1,5 @@
+samples
+collectd
+.vscode
+__pycache__
+*.log
