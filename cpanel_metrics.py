@@ -73,6 +73,8 @@ def read():
 
     active_users = getActiveUsersCount()
     suspended_users = getSuspendedUsersCount()
+    total_users = active_users + suspended_users
+
 
     collectd.Values(plugin=PLUGIN_NAME,
                     type_instance="active_users",
@@ -84,7 +86,11 @@ def read():
                     type="gauge",
                     values=[suspended_users]).dispatch()
 
-
+    collectd.Values(plugin=PLUGIN_NAME,
+                    type_instance="total_users",
+                    type="gauge",
+                    values=[total_users]).dispatch()
+                    
     collectd.Values(plugin=PLUGIN_NAME,
                     type_instance="datapoints",
                     type="counter",
