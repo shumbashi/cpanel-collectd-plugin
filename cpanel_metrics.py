@@ -8,6 +8,7 @@ import time
 import os
 import mmap
 from collections import Counter
+import subprocess
 
 try:
     import collectd
@@ -76,6 +77,7 @@ def read():
     suspended_users = getSuspendedUsersCount()
     total_users = active_users + suspended_users
     plans = getPlans()
+    version = getVersion()
 
 
     collectd.Values(plugin=PLUGIN_NAME,
@@ -98,7 +100,13 @@ def read():
                         type_instance="plans",
                         plugin_instance = plan[0],
                         type="gauge",
-                        values=[plan[1]]).dispatch()     
+                        values=[plan[1]]).dispatch()
+    
+    collectd.Values(plugin=PLUGIN_NAME,
+                    type_instance="version",
+                    plugin_instance = version,
+                    type="gauge",
+                    values=[1]).dispatch()
 
     collectd.Values(plugin=PLUGIN_NAME,
                     type_instance="datapoints",
@@ -272,6 +280,13 @@ def getPlans():
         except ValueError:
             return False
     return Counter(plans)
+
+def getVersion():
+    command = '/usr/local/cpanel/cpanel -V'
+    result,error  = subprocess.Popen(command, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+    if not error:
+        return result
+    return 'Unknown'
 
 
 
