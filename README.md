@@ -8,9 +8,9 @@
 | --- | --- | --- | --- |
 | Gauge | active_users | Number of active cPanel user account | Done |
 | Gauge | suspended_users | Number of suspended cPanel user accounts | Done |
-| Gauge | domains_configured | Number of total domains configured, main , subdomains, and aliases on the server| TBD |
+| Gauge | domains_configured | Number of total domains configured, main , subdomains, and aliases on the server| Done |
 | Counter Vector | version | cPanel version number | TBD |
-| Gauge Vector | plans | Number of accounts per plan | TBD |
+| Gauge Vector | plans | Number of accounts per plan | Done |
 | Gauge Vector | bandwidth | Bandwidth consumed per user account | TBD |
 | Gauge Vector | quota_percent | Percentage of quota used per user account | TBD |
 | Gauge Vector | quota_used | Amount of quota used per user account | TBD |

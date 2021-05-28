@@ -7,6 +7,7 @@ import sys
 import time
 import os
 import mmap
+from collections import Counter
 
 try:
     import collectd
@@ -74,6 +75,7 @@ def read():
     active_users = getActiveUsersCount()
     suspended_users = getSuspendedUsersCount()
     total_users = active_users + suspended_users
+    plans = getPlans()
 
 
     collectd.Values(plugin=PLUGIN_NAME,
@@ -90,7 +92,14 @@ def read():
                     type_instance="total_users",
                     type="gauge",
                     values=[total_users]).dispatch()
-                    
+
+    for plan in plans.items():
+        collectd.Values(plugin=PLUGIN_NAME,
+                        type_instance="plans",
+                        plugin_instance = plan[0],
+                        type="gauge",
+                        values=[plan[1]]).dispatch()     
+
     collectd.Values(plugin=PLUGIN_NAME,
                     type_instance="datapoints",
                     type="counter",
@@ -242,6 +251,29 @@ def getSuspendedUsersCount():
         if matchFilesLine(path, user, 'SUSPENDED=1', inverted=False) and not user in USERS_BLACKLIST:
             suspended_users += 1
     return suspended_users
+
+def getPlans():
+    path = "/var/cpanel/users"
+    all_users_list, _ = getFilesInDir(path)
+    plans = []
+    for user in all_users_list:
+        file_path = path + '/' + user
+        try:
+            with open(file_path) as f:
+                s = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+                position = s.find('PLAN=')
+                if position:
+                    # We found a line matching PLAN=
+                    s.seek(position)
+                    line = s.readline()
+                    plan = line.split('=')[1].strip('\n')
+                    plans.append(plan)
+
+        except ValueError:
+            return False
+    return Counter(plans)
+
+
 
 if __name__ != "__main__":
     # when running inside plugin register each callback
