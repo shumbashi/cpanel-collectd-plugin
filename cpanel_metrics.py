@@ -78,6 +78,7 @@ def read():
     total_users = active_users + suspended_users
     plans = getPlans()
     version = getVersion()
+    domains = getDomains()
 
 
     collectd.Values(plugin=PLUGIN_NAME,
@@ -94,6 +95,11 @@ def read():
                     type_instance="total_users",
                     type="gauge",
                     values=[total_users]).dispatch()
+
+    collectd.Values(plugin=PLUGIN_NAME,
+                    type_instance="domains",
+                    type="gauge",
+                    values=[domains]).dispatch()
 
     for plan in plans.items():
         collectd.Values(plugin=PLUGIN_NAME,
@@ -288,7 +294,14 @@ def getVersion():
         return result
     return 'Unknown'
 
-
+def getDomains():
+    path='/etc/userdomains'
+    try:
+        with open(path, 'r') as f:
+            lines = f.readlines()
+        return len(lines) - 1
+    except ValueError:
+        return 0
 
 if __name__ != "__main__":
     # when running inside plugin register each callback
