@@ -3,3 +3,4 @@ collectd
 .vscode
 __pycache__
 *.log
+*.pyc

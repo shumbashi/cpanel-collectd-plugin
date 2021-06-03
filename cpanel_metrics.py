@@ -79,6 +79,7 @@ def read():
     plans = getPlans()
     version = getVersion()
     domains = getDomains()
+    bandwidth = getBandwidth()
 
 
     collectd.Values(plugin=PLUGIN_NAME,
@@ -107,6 +108,13 @@ def read():
                         plugin_instance = plan[0],
                         type="gauge",
                         values=[plan[1]]).dispatch()
+
+    for user in bandwidth.items():
+        collectd.Values(plugin=PLUGIN_NAME,
+                    type_instance="bandwidth",
+                    plugin_instance = user[0],
+                    type="gauge",
+                    values=[user[1]]).dispatch()
     
     collectd.Values(plugin=PLUGIN_NAME,
                     type_instance="version",
@@ -284,8 +292,25 @@ def getPlans():
                     plans.append(plan)
 
         except ValueError:
-            return False
+            pass
     return Counter(plans)
+
+def getBandwidth():
+    path = "/var/cpanel/bandwidth.cache/"
+    all_users_list, _ = getFilesInDir(path)
+    bw = {}
+    for user in all_users_list:
+        if not user in USERS_BLACKLIST:
+            file_path = path + '/' + user
+            try:
+                with open(file_path) as f:
+                    s = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+                    bw_string = s.readline()
+                    bw_int = int(bw_string)
+                    bw[user] = bw_int
+            except ValueError:
+                pass
+    return bw
 
 def getVersion():
     command = '/usr/local/cpanel/cpanel -V'

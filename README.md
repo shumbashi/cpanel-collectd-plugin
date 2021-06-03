@@ -11,7 +11,7 @@
 | Gauge | domains_configured | Number of total domains configured, main , subdomains, and aliases on the server| Done |
 | Counter Vector | version | cPanel version number | Done |
 | Gauge Vector | plans | Number of accounts per plan | Done |
-| Gauge Vector | bandwidth | Bandwidth consumed per user account | TBD |
+| Gauge Vector | bandwidth | Bandwidth consumed per user account | Done |
 | Gauge Vector | quota_percent | Percentage of quota used per user account | TBD |
 | Gauge Vector | quota_used | Amount of quota used per user account | TBD |
 | Gauge | emails_configured | Number of total email accounts configured on the server | TBD |
