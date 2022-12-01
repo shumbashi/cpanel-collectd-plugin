@@ -3,6 +3,7 @@
 # cPanel Metrics python plugin
 # For more information see https://collectd.org/documentation/manpages/collectd-python.5.shtml
 
+import json
 import sys
 import time
 import os
@@ -77,6 +78,7 @@ def read():
     active_users = getActiveUsersCount()
     suspended_users = getSuspendedUsersCount()
     suspended_users_90 = getSuspendedUsersCount90d()
+    aup_disk_abusers = getAUPDiskAbusers()
     total_users = active_users + suspended_users
     plans = getPlans()
     version = getVersion()
@@ -98,6 +100,11 @@ def read():
                     type_instance="suspended_users_90",
                     type="gauge",
                     values=[suspended_users_90]).dispatch()
+    
+    collectd.Values(plugin=PLUGIN_NAME,
+                    type_instance="aup_disk_abusers",
+                    type="gauge",
+                    values=[aup_disk_abusers]).dispatch()
 
     collectd.Values(plugin=PLUGIN_NAME,
                     type_instance="total_users",
@@ -324,6 +331,19 @@ def getSuspendedUsersCount90d():
                     suspended_users_90 += 1
                 
     return suspended_users_90
+
+def getAUPDiskAbusers():
+    command = 'whmapi1 --output=jsonpretty get_disk_usage'
+    result,error  = subprocess.Popen(command, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+    aup_disk_abusers = 0
+
+    if not error:
+        data = json.loads(result)
+        for user in data['data']['accounts']:
+            if user['blocks_used'] > 97656300: # 95GB
+                aup_disk_abusers += 1
+
+    return aup_disk_abusers
 
 def getPlans():
     path = "/var/cpanel/users"
