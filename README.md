@@ -8,6 +8,7 @@
 | --- | --- | --- | --- |
 | Gauge | active_users | Number of active cPanel user account | Done |
 | Gauge | suspended_users | Number of suspended cPanel user accounts | Done |
+| Gauge | suspended_users_90 | Number of suspended cPanel user accounts suspended more than 90 days| Done |
 | Gauge | domains_configured | Number of total domains configured, main , subdomains, and aliases on the server| Done |
 | Counter Vector | version | cPanel version number | Done |
 | Gauge Vector | plans | Number of accounts per plan | Done |

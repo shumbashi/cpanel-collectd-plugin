@@ -9,6 +9,7 @@ import os
 import mmap
 from collections import Counter
 import subprocess
+import datetime
 
 try:
     import collectd
@@ -75,6 +76,7 @@ def read():
 
     active_users = getActiveUsersCount()
     suspended_users = getSuspendedUsersCount()
+    suspended_users_90 = getSuspendedUsersCount90d()
     total_users = active_users + suspended_users
     plans = getPlans()
     version = getVersion()
@@ -91,6 +93,11 @@ def read():
                     type_instance="suspended_users",
                     type="gauge",
                     values=[suspended_users]).dispatch()
+
+    collectd.Values(plugin=PLUGIN_NAME,
+                    type_instance="suspended_users_90",
+                    type="gauge",
+                    values=[suspended_users_90]).dispatch()
 
     collectd.Values(plugin=PLUGIN_NAME,
                     type_instance="total_users",
@@ -254,6 +261,29 @@ def matchFilesLine(path, file_name, line, inverted=False):
     except ValueError:
         return False
 
+def getLineInFile(path, file_name, line):
+    """
+    This method takes a file system path and a filename and a string identifiying a line and returns the contents of that line
+    :param path: a file system path
+    :param file_name: a file name
+    :param line: a string to find in the file
+    :return: String
+    """
+
+    file_path = path + '/' + file_name
+    try:
+        with open(file_path) as f:
+            s = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+            index = s.find(line)
+            if index != -1:
+                s.seek(index)
+                return s.readline()
+            else:
+                return False
+    except ValueError:
+        return False
+
+
 def getActiveUsersCount():
     path = "/var/cpanel/users"
     all_users_list, all_users_count = getFilesInDir(path)
@@ -273,6 +303,27 @@ def getSuspendedUsersCount():
         if matchFilesLine(path, user, 'SUSPENDED=1', inverted=False) and not user in USERS_BLACKLIST:
             suspended_users += 1
     return suspended_users
+
+def getSuspendedUsersCount90d():
+    path = "/var/cpanel/users"
+    all_users_list, all_users_count = getFilesInDir(path)
+
+    suspended_users_90 = 0
+    for user in all_users_list:
+        if matchFilesLine(path, user, 'SUSPENDED=1', inverted=False) and not user in USERS_BLACKLIST:
+            suspended_time = getLineInFile(path, user, 'SUSPENDTIME=')
+            if suspended_time:
+                suspended_epoch = int(suspended_time.split('=')[1])
+                now = datetime.datetime.now()
+                # get time object of 90 days ago
+                then = now - datetime.timedelta(days=90)
+                then_epoch = int(time.mktime(then.timetuple()))
+
+                # if suspended time is less than (happened before) 90 days ago
+                if suspended_epoch <= then_epoch:
+                    suspended_users_90 += 1
+                
+    return suspended_users_90
 
 def getPlans():
     path = "/var/cpanel/users"
