@@ -78,12 +78,14 @@ def read():
     active_users = getActiveUsersCount()
     suspended_users = getSuspendedUsersCount()
     suspended_users_90 = getSuspendedUsersCount90d()
-    aup_disk_abusers = getAUPDiskAbusers()
+    aup_disk_abusers_100G = getAUPDiskAbusers(97656300) # Size in KibiByte ~= 100 GB
+    aup_disk_abusers_500G = getAUPDiskAbusers(488281500) # ~= 500 GB
+    aup_disk_abusers_1T = getAUPDiskAbusers(976563000) # ~= 1000 GB
     total_users = active_users + suspended_users
     plans = getPlans()
     version = getVersion()
     domains = getDomains()
-    bandwidth = getBandwidth()
+    # bandwidth = getBandwidth()
 
 
     collectd.Values(plugin=PLUGIN_NAME,
@@ -102,9 +104,19 @@ def read():
                     values=[suspended_users_90]).dispatch()
     
     collectd.Values(plugin=PLUGIN_NAME,
-                    type_instance="aup_disk_abusers",
+                    type_instance="aup_disk_abusers_100G",
                     type="gauge",
-                    values=[aup_disk_abusers]).dispatch()
+                    values=[aup_disk_abusers_100G]).dispatch()
+
+    collectd.Values(plugin=PLUGIN_NAME,
+                    type_instance="aup_disk_abusers_500G",
+                    type="gauge",
+                    values=[aup_disk_abusers_500G]).dispatch()
+
+    collectd.Values(plugin=PLUGIN_NAME,
+                    type_instance="aup_disk_abusers_1T",
+                    type="gauge",
+                    values=[aup_disk_abusers_1T]).dispatch()
 
     collectd.Values(plugin=PLUGIN_NAME,
                     type_instance="total_users",
@@ -123,12 +135,12 @@ def read():
                         type="gauge",
                         values=[plan[1]]).dispatch()
 
-    for user in bandwidth.items():
-        collectd.Values(plugin=PLUGIN_NAME,
-                    type_instance="bandwidth",
-                    plugin_instance = user[0],
-                    type="gauge",
-                    values=[user[1]]).dispatch()
+    # for user in bandwidth.items():
+    #     collectd.Values(plugin=PLUGIN_NAME,
+    #                 type_instance="bandwidth",
+    #                 plugin_instance = user[0],
+    #                 type="gauge",
+    #                 values=[user[1]]).dispatch()
     
     collectd.Values(plugin=PLUGIN_NAME,
                     type_instance="version",
@@ -332,7 +344,7 @@ def getSuspendedUsersCount90d():
                 
     return suspended_users_90
 
-def getAUPDiskAbusers():
+def getAUPDiskAbusers(size):
     command = 'whmapi1 --output=jsonpretty get_disk_usage'
     result,error  = subprocess.Popen(command, universal_newlines=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
     aup_disk_abusers = 0
@@ -340,9 +352,8 @@ def getAUPDiskAbusers():
     if not error:
         data = json.loads(result)
         for user in data['data']['accounts']:
-            if user['blocks_used'] > 97656300: # 95GB
+            if user['blocks_used'] > size:
                 aup_disk_abusers += 1
-
     return aup_disk_abusers
 
 def getPlans():
